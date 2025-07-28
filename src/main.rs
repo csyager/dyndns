@@ -5,7 +5,7 @@ use aws_sdk_route53::{config::Region, types::{HostedZone, RrType, ChangeBatch, C
 use clap::Parser;
 
 use env_logger::{Builder, Env};
-use log::{info, debug};
+use log::{info, debug, error};
 
 use reqwest;
 
@@ -132,10 +132,19 @@ async fn update_hosted_zone(client: &aws_sdk_route53::Client, hosted_zone_id: &s
                 .build()?)
             .build()?);
     debug!("Request: {:?}", request); 
-    let response = request.send().await?;
+    let response = request.send().await;
     debug!("Response: {:?}", response);
-
-    Ok(())
+    
+    match response {
+        Ok(_) => {
+            info!("Resource record sets updated successfully.");
+            Ok(())
+        },
+        Err(e) => {
+            error!("Failed to update record set: {}", e);
+            Err(Box::new(e))
+        }
+    }
 
 } 
 
